@@ -40,7 +40,6 @@ def getTotal(url):
 	while count<=page:
 		grab("https://sz.lianjia.com/ershoufang/nanshanqu/pg"+str(count)+"l3a3p4/")
 		count += 1	
-
 getTotal(url)
 
 print('共'+str(count)+'条')
