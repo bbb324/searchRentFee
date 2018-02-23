@@ -1,5 +1,5 @@
 import requests
-
+import math
 from bs4 import BeautifulSoup
 
 url = "https://sz.lianjia.com/ershoufang/nanshanqu/l3a3p4/"
@@ -29,10 +29,19 @@ def grab(url):
 		print(yard+ '|' + price + '|' +address) #打印出 小区，价格，地址
 
 
+#先获取总页数，再以循环的方式获取列表
+def getTotal(url):
+	r = requests.get(url)
+	soup = BeautifulSoup(r.content, 'lxml')
+	total = soup.find('h2', {'class', 'total fl'})
+	number = int(total.find('span').text)
+	page = math.ceil(number/30)
+	count = 1
+	while count<=page:
+		grab("https://sz.lianjia.com/ershoufang/nanshanqu/pg"+str(count)+"l3a3p4/")
+		count += 1	
 
-for page in range(1, 5):
-	url = "https://sz.lianjia.com/ershoufang/nanshanqu/pg"+str(page)+"l3a3p4/"
-	grab(url)
+getTotal(url)
 
 print('共'+str(count)+'条')
 	
