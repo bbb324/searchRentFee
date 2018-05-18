@@ -60,7 +60,7 @@ def getTotal(day):
         count = 1    
 
 # 爬取 7天内 新上架的房源
-getTotal(7)
+#getTotal(7)
 
 
 
@@ -117,7 +117,7 @@ def grab_area_house_number():
     show(diagram)
     
 
-#grab_area_house_number()
+grab_area_house_number()
 
 
 # 30 天内的成交数据
