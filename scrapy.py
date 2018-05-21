@@ -1,7 +1,7 @@
 import requests
 import math
 from bs4 import BeautifulSoup
-import re
+import re # 正则
 from bokeh.io import output_notebook, show # 引入初始化
 from bokeh.plotting import figure #引入图表界面
 from bokeh.models import ColumnDataSource, HoverTool, FactorRange, LabelSet
@@ -12,6 +12,9 @@ from bokeh.transform import factor_cmap
 
 from bokeh.models.glyphs import VBar
 
+import os # 操作系统
+from openpyxl import Workbook
+import datetime
 
 
 
@@ -117,7 +120,7 @@ def grab_area_house_number():
     show(diagram)
     
 
-grab_area_house_number()
+#grab_area_house_number()
 
 
 # 30 天内的成交数据
@@ -129,15 +132,14 @@ def getDoneTransaction():
 
     for item in g_data[0].find_all('li'):
         try:
-            yard  = item.find_all('div', {'class', 'title'})[0].text
+            yard    = item.find_all('div', {'class', 'title'})[0].text
         except:
             pass
         try:
-            href  = item.find_all('a')[0].attrs['href']
+            href    = item.find_all('a')[0].attrs['href']
             result  = getTransactionDate(href)
         except:
-            pass    
-
+            pass
         print(yard + '|' + result['total']+ '|' + result['date'])    
 
 
@@ -161,8 +163,78 @@ def getTransactionDate(url):
 #getDoneTransaction()
 
 
+def getUploadInfo(url):
+    req         = requests.get(url)
+    soup        = BeautifulSoup(req.content, 'lxml')
+    priceInfo   = soup.find_all("div", {"class", "price"})[0]
+    total       = priceInfo.find_all('span', {'class', 'total'})[0].text + '万'
+    unit        = priceInfo.find_all('span', {'class', 'unitPriceValue'})[0].text
+    
+    # 房子信息
+    houseInfo   = soup.find_all("div", {"class", "houseInfo"})[0]
+    room        = houseInfo.find_all('div', {'class', 'mainInfo'})[0].text
+
+    area        = soup.find_all('div', {'class', 'area'})[0]
+    size        = area.find_all('div', {'class', 'mainInfo'})[0].text + '平米'
+    age         = area.find_all('div', {'class', 'subInfo'})[0].text
+    direction   = soup.find_all('div', {'class', 'type'})[0].find_all('div')[0].text
+
+    geoInfo     = soup.find_all('div', {'class', 'aroundInfo'})[0]
+    community   = geoInfo.find_all('a')[0].text
+
+    
+    return ({
+                'total'     : total,      # 总价
+                'unit'      : unit,       # 单价
+                'room'      : room,       # 房屋结构
+                'direction' : direction,  # 房屋朝向
+                'community' : community,  # 房屋所属小区
+                'age'       : age,        # 房龄
+                'size'      : size        # 房屋大小
+            })
 
 
+
+
+# 获取福田区各位置新上房源，总价低于800万10套的
+def getTotalTransactionByArea():
+    area_list    = ['bagualing', 'baihua','chegongmian','chiwei','futianbaoshuiqu']
+    baseUrl = 'https://sz.lianjia.com/ershoufang/'
+
+    tmpUrl = 'https://sz.lianjia.com/ershoufang/baihua/co21'
+    r      = requests.get(tmpUrl)
+    soup   = BeautifulSoup(r.content, 'lxml')
+    g_data = soup.find_all('div', {'class', 'info clear'})
+
+
+    total = 800
+    last_day = 30
+   
+    
+
+    for item in g_data:
+        price = int(item.contents[5].find_all('span')[0].text)
+        if (price <= total):
+            result  = getUploadInfo(item.find_all('a')[0].attrs['href'])
+            result['link']       = item.find_all('a')[0].attrs['href']
+            result['uploadTime'] = item.contents[3].text.split('/ ')[2]
+            index = 1
+            wb = Workbook()
+            ws = wb.active
+            ws['A' + str(index)] = result['total']
+            ws['B' + str(index)] = result['unit']
+            ws['C' + str(index)] = result['room']
+            ws['D' + str(index)] = result['direction']
+            ws['E' + str(index)] = result['community']
+            ws['F' + str(index)] = result['age']
+            ws['G' + str(index)] = result['size']
+                
+            index = index + 1
+            wb.save('data.xlsx')    
+
+            
+
+getTotalTransactionByArea()  
 
 
 
@@ -269,14 +341,25 @@ def mixedCategory():
 
 
 
+def toExcel():
+    wb = Workbook()
+    ws = wb.active
+    #ws['A1'] = 42
+    #ws.append([1,2,3])
+    area_list = [
+        'https://sz.lianjia.com/ershoufang/luohuqu/a3a4', # 罗湖
+        'https://sz.lianjia.com/ershoufang/futianqu/a3a4', # 福田
+        'https://sz.lianjia.com/ershoufang/nanshanqu/a3a4', # 南山
+        'https://sz.lianjia.com/ershoufang/baoanqu/a3a4'] # 宝安
+    index = 1   
+    for area in area_list:
 
+        ws['A'+str(index)] = area
+        index = index + 1
+    
+    wb.save('sample.xlsx')
 
-
-
-
-
-
-
+#toExcel()
 
 
 
