@@ -12,9 +12,10 @@ from bokeh.transform import factor_cmap
 
 from bokeh.models.glyphs import VBar
 
-import os # 操作系统
+
 from openpyxl import Workbook
-import datetime
+from openpyxl.cell.cell import WriteOnlyCell # 写excel
+from openpyxl.utils.dataframe import dataframe_to_rows
 
 
 
@@ -196,50 +197,69 @@ def getUploadInfo(url):
 
 
 
-# 获取福田区各位置新上房源，总价低于800万10套的
-def getTotalTransactionByArea():
+
+def getTotalTransactionByArea(total):
     area_list    = ['bagualing', 'baihua','chegongmian','chiwei','futianbaoshuiqu']
     baseUrl = 'https://sz.lianjia.com/ershoufang/'
 
-    tmpUrl = 'https://sz.lianjia.com/ershoufang/baihua/co21'
-    r      = requests.get(tmpUrl)
-    soup   = BeautifulSoup(r.content, 'lxml')
-    g_data = soup.find_all('div', {'class', 'info clear'})
+    # tmpUrl = 'https://sz.lianjia.com/ershoufang/baihua/co21'
+    # r      = requests.get(tmpUrl)
+    # soup   = BeautifulSoup(r.content, 'lxml')
+    # g_data = soup.find_all('div', {'class', 'info clear'})
 
 
-    total = 800
+    
     last_day = 30
-   
+    
+    info = []
+    
+    for location in area_list:
+        href   = baseUrl + location + '/co21'
+        r      = requests.get(href)
+        soup   = BeautifulSoup(r.content, 'lxml')
+        g_data = soup.find_all('div', {'class', 'info clear'})
+        
+        
+        for item in g_data:
+            price = float(item.contents[5].find_all('span')[0].text)
+            if (price <= total):
+                result  = getUploadInfo(item.find_all('a')[0].attrs['href'])
+                result['link']       = item.find_all('a')[0].attrs['href']
+                result['uploadTime'] = item.contents[3].text.split('/ ')[2]
+                info.append(result)
+
+        write_excel(info, location)
+
+def write_excel(info, location):
+    wb = Workbook()
+    ws = wb.active
+    ws.append([
+        'total',       # 总价
+        'unit',        # 单价
+        'room'         # 户型
+        'direction'    # 朝向
+        'community'    # 小区
+        'age'          # 房龄
+        'size'         # 平方米
+        'link'         # 链接
+        'uploadTime'   # 上传时间
+    ])
+    
+    for key in range(len(info)):
+        ws.cell(row = (key + 2), column = 1).value = info[key]['total']
+        ws.cell(row = (key + 2), column = 2).value = info[key]['unit']
+        ws.cell(row = (key + 2), column = 3).value = info[key]['room']
+        ws.cell(row = (key + 2), column = 4).value = info[key]['direction']
+        ws.cell(row = (key + 2), column = 5).value = info[key]['community']
+        ws.cell(row = (key + 2), column = 6).value = info[key]['age']
+        ws.cell(row = (key + 2), column = 7).value = info[key]['size']
+        ws.cell(row = (key + 2), column = 8).value = info[key]['link']
+        ws.cell(row = (key + 2), column = 9).value = info[key]['uploadTime']
+    wb.save(location + '.xlsx')
     
 
-    for item in g_data:
-        price = int(item.contents[5].find_all('span')[0].text)
-        if (price <= total):
-            result  = getUploadInfo(item.find_all('a')[0].attrs['href'])
-            result['link']       = item.find_all('a')[0].attrs['href']
-            result['uploadTime'] = item.contents[3].text.split('/ ')[2]
-            index = 1
-            wb = Workbook()
-            ws = wb.active
-            ws['A' + str(index)] = result['total']
-            ws['B' + str(index)] = result['unit']
-            ws['C' + str(index)] = result['room']
-            ws['D' + str(index)] = result['direction']
-            ws['E' + str(index)] = result['community']
-            ws['F' + str(index)] = result['age']
-            ws['G' + str(index)] = result['size']
-                
-            index = index + 1
-            wb.save('data.xlsx')    
-
-            
-
-getTotalTransactionByArea()  
-
-
-
-
-
+# 获取福田区各位置总价低于 300 万的房源
+getTotalTransactionByArea(300)
 
 
 
@@ -344,20 +364,12 @@ def mixedCategory():
 def toExcel():
     wb = Workbook()
     ws = wb.active
-    #ws['A1'] = 42
-    #ws.append([1,2,3])
-    area_list = [
-        'https://sz.lianjia.com/ershoufang/luohuqu/a3a4', # 罗湖
-        'https://sz.lianjia.com/ershoufang/futianqu/a3a4', # 福田
-        'https://sz.lianjia.com/ershoufang/nanshanqu/a3a4', # 南山
-        'https://sz.lianjia.com/ershoufang/baoanqu/a3a4'] # 宝安
-    index = 1   
-    for area in area_list:
-
-        ws['A'+str(index)] = area
-        index = index + 1
-    
-    wb.save('sample.xlsx')
+    print(dataframe_to_rows)
+    # for r in dataframe_to_rows(df, index = True, header = True):
+    #     ws.append(r)
+    # for cell in ws['A'] + ws[1]:
+    #     cell.style = 'Pandas'
+    # wb.save('panda.xlsx')
 
 #toExcel()
 
