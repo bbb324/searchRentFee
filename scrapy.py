@@ -12,7 +12,8 @@ from bokeh.transform import factor_cmap
 
 from bokeh.models.glyphs import VBar
 
-
+from datetime import datetime
+import time
 from openpyxl import Workbook
 from openpyxl.cell.cell import WriteOnlyCell # 写excel
 from openpyxl.utils.dataframe import dataframe_to_rows
@@ -68,7 +69,7 @@ def getTotal(day):
 
 
 
-# 爬取特定区域的房源总数 （70~90，90~110 不考虑价格）
+
 def grab_area_house_number():
     title = '各区房源数量'
     nums = []
@@ -120,7 +121,7 @@ def grab_area_house_number():
 
     show(diagram)
     
-
+# 爬取特定区域的房源总数 （70~90，90~110 不考虑价格）
 #grab_area_house_number()
 
 
@@ -163,8 +164,8 @@ def getTransactionDate(url):
 
 #getDoneTransaction()
 
-
 def getUploadInfo(url):
+
     req         = requests.get(url)
     soup        = BeautifulSoup(req.content, 'lxml')
     priceInfo   = soup.find_all("div", {"class", "price"})[0]
@@ -183,7 +184,8 @@ def getUploadInfo(url):
     geoInfo     = soup.find_all('div', {'class', 'aroundInfo'})[0]
     community   = geoInfo.find_all('a')[0].text
 
-    
+    # 挂牌时间
+    date = soup.find_all('div', {'class', 'transaction'})[0].find_all('span')[1].text
     return ({
                 'total'     : total,      # 总价
                 'unit'      : unit,       # 单价
@@ -191,14 +193,15 @@ def getUploadInfo(url):
                 'direction' : direction,  # 房屋朝向
                 'community' : community,  # 房屋所属小区
                 'age'       : age,        # 房龄
-                'size'      : size        # 房屋大小
+                'size'      : size,       # 房屋大小
+                'date'      : date        # 挂牌时间
             })
 
 
 
 
 
-def getTotalTransactionByArea(total):
+def getTotalTransactionByArea(priceRange, deadline):
     area_list    = ['bagualing', 'baihua','chegongmian','chiwei','futianbaoshuiqu']
     baseUrl = 'https://sz.lianjia.com/ershoufang/'
 
@@ -208,10 +211,8 @@ def getTotalTransactionByArea(total):
     # g_data = soup.find_all('div', {'class', 'info clear'})
 
 
-    
-    last_day = 30
-    
     info = []
+
     
     for location in area_list:
         href   = baseUrl + location + '/co21'
@@ -222,13 +223,15 @@ def getTotalTransactionByArea(total):
         
         for item in g_data:
             price = float(item.contents[5].find_all('span')[0].text)
-            if (price <= total):
-                result  = getUploadInfo(item.find_all('a')[0].attrs['href'])
+            result  = getUploadInfo(item.find_all('a')[0].attrs['href'])
+            print(result)
+            if price >= priceRange[0] and price <= priceRange[1] and deadline <= result['date']:
+
                 result['link']       = item.find_all('a')[0].attrs['href']
                 result['uploadTime'] = item.contents[3].text.split('/ ')[2]
                 info.append(result)
-
-        write_excel(info, location)
+        if len(info) > 0:
+            write_excel(info, location)
 
 def write_excel(info, location):
     wb = Workbook()
@@ -258,8 +261,8 @@ def write_excel(info, location):
     wb.save(location + '.xlsx')
     
 
-# 获取福田区各位置总价低于 300 万的房源
-getTotalTransactionByArea(300)
+# 获取福田区各位置总价范围600~800万，2018-04-01之后上的房源
+getTotalTransactionByArea([600,800], '2018-04-01')
 
 
 
@@ -359,19 +362,6 @@ def mixedCategory():
 
 
 
-
-
-def toExcel():
-    wb = Workbook()
-    ws = wb.active
-    print(dataframe_to_rows)
-    # for r in dataframe_to_rows(df, index = True, header = True):
-    #     ws.append(r)
-    # for cell in ws['A'] + ws[1]:
-    #     cell.style = 'Pandas'
-    # wb.save('panda.xlsx')
-
-#toExcel()
 
 
 
