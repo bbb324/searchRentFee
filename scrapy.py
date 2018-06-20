@@ -26,8 +26,11 @@ def grab(url, last_day):
     soup = BeautifulSoup(r.content, 'lxml')
     g_data = soup.find_all("div", {"class", "info clear"})
     
+    result = []
+
     for item in g_data:
         day = item.contents[3].text.split('/ ')[2]
+        
         if day == '刚刚发布' or int(re.match('\d+', day).group()) < last_day:
             try:
                 yard = item.contents[1].find_all('a')[0].text
@@ -45,27 +48,56 @@ def grab(url, last_day):
                 time = item.contents[3].text.split('/ ')[2]
             except:
                 pass
-            print(yard+ '|' + price + '|' + time + '|') #打印出 小区，价格，地址
+            result.append({
+                'yard'  : yard,
+                'price' : price,
+                'time'  : time,
+                'url'   : url
+            })    
+    return result;
+
+            #print(yard+ '|' + price + '|' + time + '|') #打印出 小区，价格，地址
+    
 
 #先获取总页数，再以循环的方式获取列表
 def getTotal(day):
+    # page = 5 # 爬的总页数
+    # count = 1
+    # area_list = [
+    #     'https://sz.lianjia.com/ershoufang/luohuqu/pg', # 罗湖
+    #     'https://sz.lianjia.com/ershoufang/futianqu/pg', # 福田
+    #     'https://sz.lianjia.com/ershoufang/nanshanqu/pg', # 南山
+    #     'https://sz.lianjia.com/ershoufang/baoanqu/pg'] # 宝安
+    # total = [];    
+    # for link in area_list:
+    #     while count<=page:
+    #         href   = link + str(count) +"co32a3a4/"
+    #         #info   = grab(href, day)
+    #         if(len(info) != 0):
+    #            total.append(info) 
+    #         count += 1
+    #     count = 1    
+    # print(total)    
     page = 5 # 爬的总页数
     count = 1
-    area_list = [
-        'https://sz.lianjia.com/ershoufang/luohuqu/pg', # 罗湖
-        'https://sz.lianjia.com/ershoufang/futianqu/pg', # 福田
-        'https://sz.lianjia.com/ershoufang/nanshanqu/pg', # 南山
-        'https://sz.lianjia.com/ershoufang/baoanqu/pg'] # 宝安
+    area_list = {
+        'luohu'   : 'https://sz.lianjia.com/ershoufang/luohuqu/pg',
+        'futian'  : 'https://sz.lianjia.com/ershoufang/futianqu/pg',
+        'nanshan' : 'https://sz.lianjia.com/ershoufang/nanshanqu/pg',
+        'baoan'   : 'https://sz.lianjia.com/ershoufang/baoanqu/pg'
+    }
+    total = [];    
     for link in area_list:
         while count<=page:
-            href = link + str(count) +"co32a3a4/"
-            print(href)
-            grab(href, day)
+            href   = link + str(count) +"co32a3a4/"
+            #info   = grab(href, day)
+            if(len(info) != 0):
+               total.append(info) 
             count += 1
         count = 1    
-
+    print(total)    
 # 爬取 7天内 新上架的房源
-#getTotal(7)
+getTotal(7)
 
 
 
@@ -158,8 +190,6 @@ def getTransactionDate(url):
     total_value = total_ele.find_all('i')[0].text + '万' # 成交金额
 
     return ({'total': total_value, 'date': date})
-
-
 
 
 #getDoneTransaction()
@@ -262,7 +292,7 @@ def write_excel(info, location):
     
 
 # 获取福田区各位置总价范围600~800万，2018-04-01之后上的房源
-getTotalTransactionByArea([600,800], '2018-04-01')
+#getTotalTransactionByArea([600,800], '2018-04-01')
 
 
 
