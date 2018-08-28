@@ -17,7 +17,10 @@ dist_list = [
         'http://bsy.sz.bendibao.com/bsyDetail/611764.html', #福田住房列表
         'http://bsy.sz.bendibao.com/bsyDetail/616443.html', #南山住房列表
 ]
+tmp = [{'total': '420万', 'unit': '52500元/平米', 'room': '2室2厅', 'direction': '南 北', 'community': '泰然广场', 'age': '1998年建/板楼', 'size': '80平米平米', 'date': '2016-10-30', 'url': 'https://sz.lianjia.com/ershoufang/105100484153.html', 'schoolName': '下沙小学'}, {'total': '530万', 'unit': '54640元/平米', 'room': '3室2厅', 'direction': '南 北', 'community': '泰然广场', 'age': '1998年建/板楼', 'size': '97平米平米', 'date': '2018-01-13', 'url': 'https://sz.lianjia.com/ershoufang/105101188890.html', 'schoolName': '下沙小学'}, {'total': '540万', 'unit': '55556元/平米', 'room': '3室2厅', 'direction': '南', 'community': '泰然广场', 'age': '1997年建/板楼', 'size': '97.2平米平米', 'date': '2017-12-23', 'url': 'https://sz.lianjia.com/ershoufang/105101159403.html', 'schoolName': '下沙小学'}]
 
+wb = Workbook()
+ws = wb.active
 
 # 获得省一级小学列表名单
 def getTopElementrySchool(area, range):
@@ -106,7 +109,6 @@ def getUploadInfo(url, schoolName):
     size        = area.find_all('div', {'class', 'mainInfo'})[0].text + '平米'
     age         = area.find_all('div', {'class', 'subInfo'})[0].text
     direction   = soup.find_all('div', {'class', 'type'})[0].find_all('div')[0].text
-
     geoInfo     = soup.find_all('div', {'class', 'aroundInfo'})[0]
     community   = geoInfo.find_all('a')[0].text
 
@@ -154,7 +156,6 @@ def getApartmentInfo(param, range):
         else:
             g_data = soup.find_all('div', {'class': 'info clear'})
             detail = formatInfo(g_data, unit, param['name'])
-            
             write_excel(detail)
 
 
@@ -168,23 +169,21 @@ def formatInfo(g_data, community, schoolName):
     return list        
 
             
-
+# 写入excel
 def write_excel(info):
-    wb = Workbook()
-    ws = wb.active
     print(info)
     ws.append([
         'schoolName',  # 学校名称
         'total',       # 总价
         'unit',        # 单价
-        'room'         # 户型
-        'direction'    # 朝向
-        'community'    # 小区
-        'age'          # 房龄
-        'size'         # 平方米
-        'url'          # 链接
+        'room',        # 户型
+        'direction',   # 朝向
+        'community',   # 小区
+        'age',         # 房龄
+        'size',        # 平方米
+        'url',         # 链接
     ])
-    
+
     for key in range(len(info)):
         ws.cell(row = (key + 2), column = 1).value = info[key]['schoolName']
         ws.cell(row = (key + 2), column = 2).value = info[key]['total']
@@ -199,7 +198,9 @@ def write_excel(info):
 
 
 getTopElementrySchool('futian', [400, 550])
-    
+
+
+
 # def test():
 #     url = 'https://sz.lianjia.com/ershoufang/bp500ep550rs'+ '花好园/'
 #     r = requests.get(url)
