@@ -17,10 +17,19 @@ dist_list = [
         'http://bsy.sz.bendibao.com/bsyDetail/611764.html', #福田住房列表
         'http://bsy.sz.bendibao.com/bsyDetail/616443.html', #南山住房列表
 ]
-tmp = [{'total': '420万', 'unit': '52500元/平米', 'room': '2室2厅', 'direction': '南 北', 'community': '泰然广场', 'age': '1998年建/板楼', 'size': '80平米平米', 'date': '2016-10-30', 'url': 'https://sz.lianjia.com/ershoufang/105100484153.html', 'schoolName': '下沙小学'}, {'total': '530万', 'unit': '54640元/平米', 'room': '3室2厅', 'direction': '南 北', 'community': '泰然广场', 'age': '1998年建/板楼', 'size': '97平米平米', 'date': '2018-01-13', 'url': 'https://sz.lianjia.com/ershoufang/105101188890.html', 'schoolName': '下沙小学'}, {'total': '540万', 'unit': '55556元/平米', 'room': '3室2厅', 'direction': '南', 'community': '泰然广场', 'age': '1997年建/板楼', 'size': '97.2平米平米', 'date': '2017-12-23', 'url': 'https://sz.lianjia.com/ershoufang/105101159403.html', 'schoolName': '下沙小学'}]
-
 wb = Workbook()
 ws = wb.active
+ws.append([
+        'schoolName',  # 学校名称
+        'total（万）',  # 总价
+        'unit',        # 单价
+        'room',        # 户型
+        'direction',   # 朝向
+        'community',   # 小区
+        'age',         # 房龄
+        'size',        # 平方米
+        'url',         # 链接
+    ])
 
 # 获得省一级小学列表名单
 def getTopElementrySchool(area, range):
@@ -98,7 +107,7 @@ def getUploadInfo(url, schoolName):
     req         = requests.get(url)
     soup        = BeautifulSoup(req.content, 'lxml')
     priceInfo   = soup.find_all("div", {"class", "price"})[0]
-    total       = priceInfo.find_all('span', {'class', 'total'})[0].text + '万'
+    total       = priceInfo.find_all('span', {'class', 'total'})[0].text
     unit        = priceInfo.find_all('span', {'class', 'unitPriceValue'})[0].text
     
     # 房子信息
@@ -146,13 +155,13 @@ def getApartmentInfo(param, range):
             print('不存在房源')
         # 出现拼写错误时，取第一个跳转链接
         elif len(soup.find_all('div', {'class','spellcheck'})) != 0:
-            print('跳转')
+            print('存在模糊查询')
             # spellGuess = soup.find_all('div', {'class','spellcheck'})[0]
             # ele = spellGuess.find_all('a')[0]
             # getApartmentInfo(ele.attrs['data-el'])
         # 找到0套待售房源    
         elif group.find_all('span')[0].text.strip(' ') == '0':
-            print('无')
+            print('找到0套在售房源')
         else:
             g_data = soup.find_all('div', {'class': 'info clear'})
             detail = formatInfo(g_data, unit, param['name'])
@@ -171,60 +180,23 @@ def formatInfo(g_data, community, schoolName):
             
 # 写入excel
 def write_excel(info):
-    print(info)
-    ws.append([
-        'schoolName',  # 学校名称
-        'total',       # 总价
-        'unit',        # 单价
-        'room',        # 户型
-        'direction',   # 朝向
-        'community',   # 小区
-        'age',         # 房龄
-        'size',        # 平方米
-        'url',         # 链接
-    ])
-
+    lastRow = ws.max_row
     for key in range(len(info)):
-        ws.cell(row = (key + 2), column = 1).value = info[key]['schoolName']
-        ws.cell(row = (key + 2), column = 2).value = info[key]['total']
-        ws.cell(row = (key + 2), column = 3).value = info[key]['unit']
-        ws.cell(row = (key + 2), column = 4).value = info[key]['room']
-        ws.cell(row = (key + 2), column = 5).value = info[key]['direction']
-        ws.cell(row = (key + 2), column = 6).value = info[key]['community']
-        ws.cell(row = (key + 2), column = 7).value = info[key]['age']
-        ws.cell(row = (key + 2), column = 8).value = info[key]['size']
-        ws.cell(row = (key + 2), column = 9).value = info[key]['url']
+        row = lastRow + key + 1
+        print('在第'+str(row)+'行写入')
+        ws.cell(row = row, column = 1).value = info[key]['schoolName']
+        ws.cell(row = row, column = 2).value = info[key]['total']
+        ws.cell(row = row, column = 3).value = info[key]['unit']
+        ws.cell(row = row, column = 4).value = info[key]['room']
+        ws.cell(row = row, column = 5).value = info[key]['direction']
+        ws.cell(row = row, column = 6).value = info[key]['community']
+        ws.cell(row = row, column = 7).value = info[key]['age']
+        ws.cell(row = row, column = 8).value = info[key]['size']
+        ws.cell(row = row, column = 9).value = info[key]['url']
     wb.save('futian' + '.xlsx')
 
 
 getTopElementrySchool('futian', [400, 550])
-
-
-
-# def test():
-#     url = 'https://sz.lianjia.com/ershoufang/bp500ep550rs'+ '花好园/'
-#     r = requests.get(url)
-#     soup = BeautifulSoup(r.content, 'lxml')
-    
-#     group = soup.find("h2", {"class", "total fl"})
-    
-#     # 出现拼写错误时，取第一个跳转链接
-#     if len(soup.find_all('div', {'class','spellcheck'})) != 0:
-#         spellGuess = soup.find_all('div', {'class','spellcheck'})[0]
-#         ele = spellGuess.find_all('a')[0]
-#         print(ele.attrs['data-el'])
-#         getApartmentInfo(ele.attrs['data-el'], [400, 550])
-#     # 找到0套待售房源    
-#     elif group.find_all('span')[0].text.strip(' ') == '0':
-#         print('无')
-#     else:
-#         g_data = soup.find_all('div', {'class': 'info clear'})
-#         formatInfo(g_data, '花好园')
-
-
-
-
-# test()
 
 
 
