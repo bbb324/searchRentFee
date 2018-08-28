@@ -20,15 +20,15 @@ dist_list = [
 wb = Workbook()
 ws = wb.active
 ws.append([
-        'schoolName',  # 学校名称
-        'total（万）',  # 总价
-        'unit',        # 单价
-        'room',        # 户型
-        'direction',   # 朝向
-        'community',   # 小区
-        'age',         # 房龄
-        'size',        # 平方米
-        'url',         # 链接
+        '学校名称',      # 学校名称
+        '总价(万)',      # 总价
+        '单价(每平米)',  # 单价
+        '户型',         # 户型
+        '朝向',         # 朝向
+        '小区',         # 小区
+        '房龄',         # 房龄
+        '大小（平方米）', # 平方米
+        '地址连接',      # 链接
     ])
 
 # 获得省一级小学列表名单
@@ -115,7 +115,7 @@ def getUploadInfo(url, schoolName):
     room        = houseInfo.find_all('div', {'class', 'mainInfo'})[0].text
 
     area        = soup.find_all('div', {'class', 'area'})[0]
-    size        = area.find_all('div', {'class', 'mainInfo'})[0].text + '平米'
+    size        = area.find_all('div', {'class', 'mainInfo'})[0].text
     age         = area.find_all('div', {'class', 'subInfo'})[0].text
     direction   = soup.find_all('div', {'class', 'type'})[0].find_all('div')[0].text
     geoInfo     = soup.find_all('div', {'class', 'aroundInfo'})[0]
@@ -151,6 +151,7 @@ def getApartmentInfo(param, range):
         group = soup.find("h2", {"class", "total fl"})
         if group == None:
             print('不存在页面')
+        # 设置黑名单，不进行查找    
         elif blacklist.nameList(unit):
             print('不存在房源')
         # 出现拼写错误时，取第一个跳转链接
